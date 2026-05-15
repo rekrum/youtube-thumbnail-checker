@@ -14,6 +14,16 @@
       --yt-chip: #272727;
       --yt-red: #ff0033;
     }
+    body.light-theme {
+      --yt-bg: #ffffff;
+      --yt-panel: #ffffff;
+      --yt-text: #0f0f0f;
+      --yt-sub: #606060;
+      --yt-line: #d9d9d9;
+      --yt-chip: #f2f2f2;
+      background: #ffffff;
+      color: #0f0f0f;
+    }
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -191,6 +201,10 @@
       background: #f1f1f1;
       color: #0f0f0f;
     }
+    body.light-theme .chip.active {
+      background: #0f0f0f;
+      color: #ffffff;
+    }
     .hint {
       padding: 12px;
       color: var(--yt-sub);
@@ -230,6 +244,11 @@
     .side-item.active,
     .side-item:hover {
       background: #272727;
+    }
+    body.light-theme .side-item.active,
+    body.light-theme .side-item:hover {
+      background: #e9e9e9;
+      color: #0f0f0f;
     }
     .side-heading {
       color: #f1f1f1;
@@ -458,6 +477,13 @@
         </select>
       </label>
       <label>
+        テーマ
+        <select id="themeMode">
+          <option value="dark" selected>ダークモード</option>
+          <option value="light">ライトモード</option>
+        </select>
+      </label>
+      <label>
         一覧を更新
         <button class="primary" id="reset">ダミー一覧を再生成</button>
       </label>
@@ -507,6 +533,7 @@
     const titleInput = document.getElementById('titleInput');
     const position = document.getElementById('position');
     const viewMode = document.getElementById('viewMode');
+    const themeMode = document.getElementById('themeMode');
     const main = document.querySelector('main');
     const reset = document.getElementById('reset');
 
@@ -639,8 +666,10 @@
 
     function render() {
       const isPc = viewMode.value === 'pc';
+      const isLight = themeMode.value === 'light';
       main.classList.toggle('pc-mode', isPc);
       document.body.classList.toggle('pc-view', isPc);
+      document.body.classList.toggle('light-theme', isLight);
       feed.innerHTML = '';
       const targetIndex = getTargetIndex();
       const total = 11; // 他サムネ10件 + テスト1件
@@ -708,6 +737,7 @@
     reset.addEventListener('click', render);
     position.addEventListener('change', render);
     viewMode.addEventListener('change', render);
+    themeMode.addEventListener('change', render);
 
     render();
   </script>
