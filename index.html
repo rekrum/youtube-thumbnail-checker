@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Youtubeサムネ映えチェッカー</title>
+  <style>
+    :root {
+      --yt-bg: #0f0f0f;
+      --yt-panel: #0f0f0f;
+      --yt-text: #f1f1f1;
+      --yt-sub: #aaa;
+      --yt-line: #303030;
+      --yt-chip: #272727;
+      --yt-red: #ff0033;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Roboto, Arial, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #111;
+      color: var(--yt-text);
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(15,15,15,.98);
+      border-bottom: 1px solid #202020;
+    }
+    .yt-header {
+      max-width: 520px;
+      margin: 0 auto;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .play {
+      width: 29px;
+      height: 20px;
+      border-radius: 6px;
+      background: #f00;
+      display: grid;
+      place-items: center;
+      color: white;
+      font-size: 11px;
+      line-height: 1;
+    }
+    .icons {
+      display: flex;
+      gap: 16px;
+      color: #eee;
+      font-size: 20px;
+    }
+    .control-panel {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 10px 12px 12px;
+      border-top: 1px solid #202020;
+      display: grid;
+      gap: 8px;
+      background: #111;
+    }
+    label {
+      font-size: 12px;
+      color: var(--yt-sub);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    input, select, button {
+      width: 100%;
+      border: 1px solid var(--yt-line);
+      background: #222;
+      color: var(--yt-text);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 14px;
+    }
+    input[type="file"] { padding: 8px; }
+    button {
+      cursor: pointer;
+      font-weight: 700;
+    }
+    button.primary {
+      background: var(--yt-red);
+      border-color: var(--yt-red);
+    }
+    main {
+      max-width: 520px;
+      margin: 0 auto;
+      background: var(--yt-bg);
+      min-height: 100vh;
+    }
+    .chips {
+      position: sticky;
+      top: 50px;
+      z-index: 20;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 8px 12px;
+      background: rgba(15,15,15,.98);
+      border-bottom: 1px solid #202020;
+      scrollbar-width: none;
+    }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip {
+      flex: 0 0 auto;
+      background: var(--yt-chip);
+      color: #f1f1f1;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    .chip.active {
+      background: #f1f1f1;
+      color: #0f0f0f;
+    }
+    .hint {
+      padding: 12px;
+      color: var(--yt-sub);
+      font-size: 12px;
+      line-height: 1.6;
+      border-bottom: 1px solid #202020;
+    }
+    .video-card {
+      padding-bottom: 18px;
+    }
+    .thumb-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background: #333;
+    }
+    .thumb-wrap img, .placeholder {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .placeholder {
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(255,255,255,.2), transparent 18%),
+        linear-gradient(135deg, #282828, #111);
+      color: #eee;
+      font-weight: 900;
+      text-align: center;
+      padding: 20px;
+      font-size: clamp(24px, 8vw, 42px);
+      line-height: 1.15;
+    }
+    .duration {
+      position: absolute;
+      right: 6px;
+      bottom: 6px;
+      background: rgba(0,0,0,.86);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .live-badge {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      background: #cc0000;
+      padding: 3px 6px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .target-label {
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      background: rgba(255,0,51,.94);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .02em;
+    }
+    .meta {
+      display: grid;
+      grid-template-columns: 36px 1fr 24px;
+      gap: 10px;
+      padding: 10px 12px 0;
+    }
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #666, #222);
+    }
+    .title {
+      font-size: 15px;
+      font-weight: 500;
+      line-height: 1.35;
+      margin-bottom: 4px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .details {
+      color: var(--yt-sub);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .kebab {
+      color: #ddd;
+      font-size: 20px;
+      line-height: 1;
+      text-align: right;
+    }
+    .target .thumb-wrap {
+      outline: 3px solid rgba(255,0,51,.95);
+      outline-offset: -3px;
+    }
+    .bottom-nav {
+      position: sticky;
+      bottom: 0;
+      z-index: 25;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      height: 56px;
+      background: rgba(15,15,15,.98);
+      border-top: 1px solid #202020;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 2px;
+      color: #f1f1f1;
+      font-size: 10px;
+    }
+    .nav-icon { font-size: 18px; }
+    @media (min-width: 760px) {
+      .control-panel {
+        grid-template-columns: 1fr 1fr;
+      }
+      main {
+        margin-top: 12px;
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow: 0 0 0 1px #222;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="yt-header">
+      <div class="brand"><span class="play">▶</span> Youtubeサムネ映えチェッカー</div>
+      <div class="icons"><span>⌕</span><span>◯</span></div>
+    </div>
+    <div class="control-panel">
+      <label>
+        テストするサムネ画像
+        <input id="upload" type="file" accept="image/*" />
+      </label>
+      <label>
+        配信タイトル
+        <input id="titleInput" type="text" value="【テスト】第4回カニ王戦 本配信サムネ候補" maxlength="80" />
+      </label>
+      <label>
+        候補サムネの表示位置
+        <select id="position">
+          <option value="4" selected>真ん中付近：5件目</option>
+          <option value="5">真ん中付近：6件目</option>
+          <option value="random">ランダム</option>
+        </select>
+      </label>
+      <label>
+        一覧を更新
+        <button class="primary" id="reset">ダミー一覧を再生成</button>
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <div class="chips">
+      <div class="chip active">すべて</div>
+      <div class="chip">ゲーム</div>
+      <div class="chip">ライブ</div>
+      <div class="chip">最近アップロード</div>
+      <div class="chip">関連動画</div>
+      <div class="chip">大会</div>
+    </div>
+    <div class="hint">
+      実際のスマホYouTube一覧に近い比率で表示します。アップロードしたサムネと入力した配信タイトルが、10件程度の周辺動画の中で埋もれないか確認してください。
+    </div>
+    <div id="feed"></div>
+    <div class="bottom-nav">
+      <div class="nav-item"><div class="nav-icon">⌂</div><div>ホーム</div></div>
+      <div class="nav-item"><div class="nav-icon">▣</div><div>ショート</div></div>
+      <div class="nav-item"><div class="nav-icon">＋</div><div>作成</div></div>
+      <div class="nav-item"><div class="nav-icon">▤</div><div>登録</div></div>
+      <div class="nav-item"><div class="nav-icon">◯</div><div>マイページ</div></div>
+    </div>
+  </main>
+
+  <script>
+    const feed = document.getElementById('feed');
+    const upload = document.getElementById('upload');
+    const titleInput = document.getElementById('titleInput');
+    const position = document.getElementById('position');
+    const reset = document.getElementById('reset');
+
+    let targetImage = '';
+
+    // GitHub Pages公開時は images フォルダに配置してください
+    // images/1.png ～ images/10.png を想定
+    const dummyImages = [
+      'images/1.png',
+      'images/2.png',
+      'images/3.png',
+      'images/4.png',
+      'images/5.png',
+      'images/6.png',
+      'images/7.png',
+      'images/8.png',
+      'images/9.png',
+      'images/10.png'
+    ];
+
+    const sampleTitles = [
+      {
+        title: '40代未経験からAI副業で人生が変わった話',
+        channel: 'AI副業研究所',
+        views: '36万 回視聴',
+        time: '3日前'
+      },
+      {
+        title: '速球すぎて観客がざわついた瞬間',
+        channel: 'Baseball MAX',
+        views: '82万 回視聴',
+        time: '12時間前'
+      },
+      {
+        title: '成功者が毎朝やっている習慣TOP5',
+        channel: '人生改善ラボ',
+        views: '12万 回視聴',
+        time: '5日前'
+      },
+      {
+        title: '韓国プロ野球ハイライトまとめ',
+        channel: 'Sports Highlight',
+        views: '4.8万 回視聴',
+        time: '8時間前'
+      },
+      {
+        title: '初配信！はじめまして桜井みずほです！',
+        channel: '桜井みずほ Ch.',
+        views: '2.1万 回視聴',
+        time: '配信予定'
+      },
+      {
+        title: 'ARAOHE - Cyber Music Mix',
+        channel: 'ARAOHE Official',
+        views: '9.4万 回視聴',
+        time: '2週間前'
+      },
+      {
+        title: '函館さんぽ｜夜景と静かな温泉街',
+        channel: '旅するカメラ',
+        views: '6.7万 回視聴',
+        time: '4日前'
+      },
+      {
+        title: '沖縄ひとり旅｜カフェ巡り編',
+        channel: '休日VLOG',
+        views: '14万 回視聴',
+        time: '1週間前'
+      },
+      {
+        title: '冬に食べたいおすすめ鍋レシピ3選',
+        channel: 'ごはん研究会',
+        views: '7.2万 回視聴',
+        time: '2日前'
+      },
+      {
+        title: 'はじめてのドッグランで大興奮する犬',
+        channel: 'わんこ日和',
+        views: '51万 回視聴',
+        time: '9時間前'
+      }
+    ];
+
+    function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function views() { return `${Math.floor(Math.random() * 90 + 10)}万 回視聴・${Math.floor(Math.random() * 20 + 1)} 時間前`; }
+    function duration() { return `${Math.floor(Math.random() * 28 + 2)}:${String(Math.floor(Math.random() * 60)).padStart(2,'0')}`; }
+
+    function makeSvgThumb(i) {
+      const sets = [
+        ['#ff0033', '#111111', 'LIVE'],
+        ['#ffcc00', '#101010', '神回'],
+        ['#00b7ff', '#131313', '検証'],
+        ['#7c4dff', '#181818', '攻略'],
+        ['#00c853', '#111111', '大会'],
+        ['#ff6d00', '#181818', '速報'],
+        ['#e91e63', '#111111', 'コラボ'],
+        ['#00e5ff', '#222222', '初見'],
+        ['#d500f9', '#101010', 'TOP10'],
+        ['#76ff03', '#1a1a1a', '解説']
+      ];
+      const [c1, c2, word] = sets[i % sets.length];
+      const svg = encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720">
+          <defs>
+            <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0" stop-color="${c1}"/>
+              <stop offset="1" stop-color="${c2}"/>
+            </linearGradient>
+          </defs>
+          <rect width="1280" height="720" fill="url(#g)"/>
+          <circle cx="1020" cy="180" r="190" fill="rgba(255,255,255,.18)"/>
+          <circle cx="1040" cy="185" r="115" fill="rgba(0,0,0,.38)"/>
+          <rect x="62" y="70" width="430" height="112" rx="22" fill="rgba(0,0,0,.70)"/>
+          <text x="92" y="152" font-size="72" font-weight="900" font-family="Arial, sans-serif" fill="white">${word}</text>
+          <text x="76" y="520" font-size="118" font-weight="900" font-family="Arial, sans-serif" fill="white" stroke="black" stroke-width="10">SAMPLE</text>
+          <text x="80" y="620" font-size="54" font-weight="800" font-family="Arial, sans-serif" fill="white" stroke="black" stroke-width="5">THUMBNAIL</text>
+        </svg>`);
+      return `data:image/svg+xml;charset=utf-8,${svg}`;
+    }
+
+    function getTargetIndex() {
+      if (position.value === 'random') return Math.floor(Math.random() * 5) + 3;
+      return Number(position.value);
+    }
+
+    function thumbnailSrc(i) {
+      if (dummyImages.length > 0) return dummyImages[i % dummyImages.length];
+      return makeSvgThumb(i);
+    }
+
+    function render() {
+      feed.innerHTML = '';
+      const targetIndex = getTargetIndex();
+      const total = 11; // 他サムネ10件 + テスト1件
+
+      for (let i = 0; i < total; i++) {
+        const isTarget = i === targetIndex;
+        const card = document.createElement('article');
+        card.className = `video-card ${isTarget ? 'target' : ''}`;
+
+        const thumb = isTarget && targetImage
+          ? `<img src="${targetImage}" alt="テストサムネ" />`
+          : isTarget
+            ? `<div class="placeholder">候補サムネを<br>アップロード</div>`
+            : `<img src="${thumbnailSrc(i)}" alt="ダミーサムネ" />`;
+
+        const sample = randomItem(sampleTitles);
+        const title = isTarget ? titleInput.value || 'テスト用配信タイトル' : sample.title;
+        const channel = isTarget ? 'あなたのチャンネル' : sample.channel;
+        const metaText = isTarget
+          ? '配信予定・テスト表示'
+          : `${sample.views}・${sample.time}`;
+
+        card.innerHTML = `
+          <div class="thumb-wrap">
+            ${thumb}
+            ${isTarget ? '<div class="target-label">CHECK</div>' : ''}
+            ${Math.random() > .75 && !isTarget ? '<div class="live-badge">ライブ</div>' : ''}
+            <div class="duration">${isTarget ? 'LIVE' : duration()}</div>
+          </div>
+          <div class="meta">
+            <div class="avatar"></div>
+            <div>
+              <div class="title">${escapeHtml(title)}</div>
+              <div class="details">${channel}<br>${metaText}</div>
+            </div>
+            <div class="kebab">⋮</div>
+          </div>
+        `;
+        feed.appendChild(card);
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>'"]/g, (tag) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      }[tag]));
+    }
+
+    upload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        targetImage = reader.result;
+        render();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    titleInput.addEventListener('input', render);
+    reset.addEventListener('click', render);
+    position.addEventListener('change', render);
+
+    render();
+  </script>
+</body>
+</html>
